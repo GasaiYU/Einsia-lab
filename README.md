@@ -1,5 +1,21 @@
 # Navers lab
 
+## This fork's public deployment
+
+`GasaiYU/Einsia-lab` publishes the `phys-last-exam` branch through GitHub Pages:
+<https://gasaiyu.github.io/Einsia-lab/phys-last-exam/>.
+Pushes to that branch automatically run the deployment workflow. In repository
+Settings → Pages, the build source is **GitHub Actions**.
+
+The workflow validates the original resources, builds the site, then prepares
+the generated HTML, scripts, styles and catalogues for the Pages repository URL.
+Only the generated `dist/` copy receives the URL prefix. Media and signed
+evaluation evidence remain unchanged; the generated integrity manifest is
+refreshed and the full resource validation runs again before publication.
+The local development site continues to use root-relative URLs.
+
+The contributing notes below describe the upstream project's workflow.
+
 Lab homepage for [lab.einsia.ai](https://lab.einsia.ai), built with
 [Astro](https://astro.build) on the
 [Astroship](https://github.com/surjithctly/astroship) starter (Astro +

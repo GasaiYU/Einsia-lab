@@ -7,6 +7,10 @@ import { fileURLToPath } from 'node:url';
 const repo=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const arg=process.argv.indexOf('--root');
 const root=path.resolve(repo,arg<0?'public':process.argv[arg+1]);
+// Built project sites add a URL prefix; disk paths and canonical task IDs do not.
+const base=(process.env.BASE_PATH || '').replace(/\/$/,'');
+const readJson=p=>JSON.parse(fs.readFileSync(p,'utf8'),(_key,value)=>
+  base && typeof value==='string' && value.startsWith(base+'/') ? value.slice(base.length) : value);
 const budget=950_000_000; // leave headroom below GitHub Pages' 1 GB site limit
 const sha=p=>crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
 function* files(dir){
@@ -17,8 +21,8 @@ function* files(dir){
   }
 }
 const physical=path.join(root,'phys-last-exam');
-const gallery=JSON.parse(fs.readFileSync(path.join(physical,'video-gallery.json'),'utf8'));
-const manifest=JSON.parse(fs.readFileSync(path.join(physical,'release-assets.json'),'utf8'));
+const gallery=readJson(path.join(physical,'video-gallery.json'));
+const manifest=readJson(path.join(physical,'release-assets.json'));
 assert.equal(gallery.delivery?.version,1,'Run prepare-web-release.py before committing evaluation assets');
 assert.equal(gallery.source,'all_test');
 const expected=new Map(manifest.assets.map(a=>[a.url,a]));
@@ -58,7 +62,7 @@ for(const e of gallery.entries){
   if(e.annotated)annotated++;
   if(e.initializationRun){
     initialized++;const r=e.initializationRun;
-    const init=JSON.parse(fs.readFileSync(resolve(r.annotation),'utf8'));
+    const init=readJson(resolve(r.annotation));
     assert.equal(sha(resolve(r.frameZero)),init.source_image_sha256);
     assert.equal(init.source_video_sha256,e.sourceSha256);
     assert.equal(sha(resolve(r.annotation)),r.signature.annotation);
@@ -70,9 +74,9 @@ assert.equal(gallery.coverage.annotated,annotated);
 assert.equal(gallery.coverage.models,modelSet.size);assert.equal(gallery.coverage.tasks,taskSet.size);
 assert.equal(gallery.coverage.initializedSamples,initialized);
 // Enforce a single task namespace throughout the published package.
-const index=JSON.parse(fs.readFileSync(path.join(physical,'task-index.json'),'utf8'));
-const results=JSON.parse(fs.readFileSync(path.join(physical,'paper-results.json'),'utf8'));
-const benchmark=JSON.parse(fs.readFileSync(path.join(physical,'benchmark.json'),'utf8'));
+const index=readJson(path.join(physical,'task-index.json'));
+const results=readJson(path.join(physical,'paper-results.json'));
+const benchmark=readJson(path.join(physical,'benchmark.json'));
 const canonical=new Map(index.tasks.map(t=>[t.id,t]));
 assert.equal(canonical.size,40);
 assert.equal(new Set(index.tasks.map(t=>t.legacyId)).size,40);
@@ -99,11 +103,11 @@ for(const e of gallery.entries) {
     const parts=value.split('/');assert.equal(parts[3],e.model);assert.equal(parts[4],e.task);assert.equal(parts[5],String(e.seed));
   }
   for(const key of ['measurement','visualizationMeasurement','features'])if(e[key]) {
-    const doc=JSON.parse(fs.readFileSync(resolve(e[key]),'utf8'));
+    const doc=readJson(resolve(e[key]));
     for(const field of ['task','task_id'])if(doc[field])assert.equal(doc[field],e.task,`${e[key]}: ${field}`);
   }
   if(e.initializationRun) {
-    const doc=JSON.parse(fs.readFileSync(resolve(e.initializationRun.annotation),'utf8'));
+    const doc=readJson(resolve(e.initializationRun.annotation));
     assert.equal(doc.task_id,e.task);
   }
 }

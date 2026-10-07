@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [phys-last-exam]
   workflow_dispatch:
 
 permissions:
@@ -37,13 +37,24 @@ jobs:
       - name: Validate committed video resources
         run: npm run validate:phys-last-exam
 
+      - name: Test project-site URL handling
+        run: node --test scripts/prepare-pages.test.mjs
+
       - name: Build
         run: npm run build
         env:
           SITE: ${{ steps.pages.outputs.origin }}
 
+      - name: Prepare URLs for the repository Pages address
+        run: node scripts/prepare-pages.mjs
+        env:
+          SITE: ${{ steps.pages.outputs.origin }}
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}
+
       - name: Check deployable resources and Pages size budget
         run: npm run validate:phys-last-exam -- --root dist
+        env:
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

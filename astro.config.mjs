@@ -40,7 +40,7 @@ function publicDirectoryIndex() {
 
 // https://astro.build/config
 export default defineConfig({
-  site: "https://lab.einsia.ai",
+  site: process.env.SITE || "https://lab.einsia.ai",
   base: "/",
   output: "static",
   integrations: [mdx(), sitemap(), icon()],
